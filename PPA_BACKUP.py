@@ -14,6 +14,7 @@ from dados import Criardados
 
 acumulador_erro = 0
 conteudo_enviado_email = []
+log = []
 
 class PPA_BACKUP:
 
@@ -40,7 +41,7 @@ class PPA_BACKUP:
         arquivo_config.writelines("\n\n")
         arquivo_config.writelines("[NFE]")
         arquivo_config.writelines("\n")
-        arquivo_config.writelines("EMP1 = C:/FIT/NFe1/")
+        arquivo_config.writelines("EMP1 = C:/FIT/NFe/")
         arquivo_config.writelines("\n")
         arquivo_config.writelines("EMP2 = C:/FIT/NFe2/")
         arquivo_config.writelines("\n")
@@ -90,6 +91,7 @@ class PPA_BACKUP:
             except sqlite3.Error as e:
                 PPA_BACKUP.acumulador_erros(1)
                 PPA_BACKUP.mensagem(f"ERRO AO ABRIR BANCO DE DADOS: {e}")
+                PPA_BACKUP.log(f"ERRO AO ABRIR BANCO DE DADOS: {e}")
 
             try:
                 connection = sqlite3.connect('dados.db')
@@ -99,11 +101,13 @@ class PPA_BACKUP:
             except sqlite3.Error as e:
                 PPA_BACKUP.acumulador_erros(1)
                 PPA_BACKUP.mensagem(f"ERRO AO ABRIR BANCO DE DADOS: {e}")
+                PPA_BACKUP.log(f"ERRO AO ABRIR BANCO DE DADOS: {e}")
         
             diretorio_backup = str(diretorio_backup+"/BACKUP_PPA")
 
             PPA_BACKUP.titulo("BACKUP")
             PPA_BACKUP.mensagem("BACKUP INICIADO EM: "+diretorio_backup)
+            PPA_BACKUP.log("BACKUP INICIADO EM: "+diretorio_backup)
 
             emp1_nfe=(emp1_local_nfe+"Transmitidas/"+ano_mes+'/NFe')
             emp2_nfe=(emp2_local_nfe+"Transmitidas/"+ano_mes+'/NFe')
@@ -125,10 +129,13 @@ class PPA_BACKUP:
             if (valida_destinatario==False):
                 PPA_BACKUP.pular_linha()
                 PPA_BACKUP.mensagem(f"O E-MAIL INFORMADO: '{destinatario}' É INVÁLIDO E O E-MAIL NÃO SERÁ ENVIADO.")
+                PPA_BACKUP.log(f"O E-MAIL INFORMADO: '{destinatario}' É INVÁLIDO E O E-MAIL NÃO SERÁ ENVIADO.")
+                PPA_BACKUP.mensagem("ACUMULADOR DE ERROS: "+str(quantidade_erros_backup))
                 PPA_BACKUP.mensagem("BACKUP FINALIZADO.")
-                corpo = ",".join(str(element) for element in conteudo_enviado_email) 
-                corpo=corpo.replace(",","\n")
-                PPA_BACKUP.arquivo_log(corpo)
+                PPA_BACKUP.log("BACKUP FINALIZADO.")
+                log_mensagem = ",".join(str(element) for element in log) 
+                log_mensagem=log_mensagem.replace(",","\n")
+                PPA_BACKUP.arquivo_log(log_mensagem)
             else:
                 if enviar_email=="SIM":
                     #print(destinatario)
@@ -136,6 +143,7 @@ class PPA_BACKUP:
                     #print(quantidade_erros_backup)
                     titulo=PPA_BACKUP.valida_titulo_email(quantidade_erros_backup)
                     PPA_BACKUP.pular_linha()
+                    PPA_BACKUP.mensagem("ACUMULADOR DE ERROS: "+str(quantidade_erros_backup))
                     PPA_BACKUP.mensagem("BACKUP FINALIZADO.")
                     #print(conteudo_enviado_email)
                     corpo = ",".join(str(element) for element in conteudo_enviado_email) 
@@ -143,7 +151,9 @@ class PPA_BACKUP:
                     remetente = "arquivospajola@gmail.com"
                     senha = "bexc spuo yymm mbdj"
                     
-                    PPA_BACKUP.arquivo_log(corpo)
+                    log_mensagem = ",".join(str(element) for element in log) 
+                    log_mensagem=log_mensagem.replace(",","\n")
+                    PPA_BACKUP.arquivo_log(log_mensagem)
                     PPA_BACKUP.envia_email(titulo, corpo, remetente, destinatario, senha)
                     #os.remove("mensagem.txt")
 
@@ -151,10 +161,12 @@ class PPA_BACKUP:
                     quantidade_erros_backup=PPA_BACKUP.acumulador_erros(0)
                     titulo=PPA_BACKUP.valida_titulo_email(quantidade_erros_backup)
                     PPA_BACKUP.pular_linha()
+                    PPA_BACKUP.mensagem("ACUMULADOR DE ERROS: "+str(quantidade_erros_backup))
                     PPA_BACKUP.mensagem("BACKUP FINALIZADO.")
-                    corpo = ",".join(str(element) for element in conteudo_enviado_email) 
-                    corpo=corpo.replace(",","\n")
-                    PPA_BACKUP.arquivo_log(corpo)
+                    PPA_BACKUP.log("BACKUP FINALIZADO.")
+                    log_mensagem = ",".join(str(element) for element in log) 
+                    log_mensagem=log_mensagem.replace(",","\n")
+                    PPA_BACKUP.arquivo_log(log_mensagem)
         else: 
             ctypes.windll.user32.MessageBoxW(0,"LOCAL DE BACKUP NÃO EXISTE, INSIRA O LOCAL CORRETO NO ARQUIVO CONFIG.INI!","ERRO!", 0)
 
@@ -165,29 +177,34 @@ class PPA_BACKUP:
             os.mkdir(diretorio_backup)
             #print(f"O DIRETÓRIO '{diretorio_backup}' CRIADO COM SUCESSO!")
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup}' CRIADO COM SUCESSO!")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup}' CRIADO COM SUCESSO!")
 
         except FileExistsError:
             #PPA_BACKUP.acumulador_erros(1)
             #print(f"O DIRETÓRIO '{diretorio_backup}' JÁ EXISTE.")
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup}' JÁ EXISTE.")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup}' JÁ EXISTE.")
            
         except PermissionError:
             PPA_BACKUP.acumulador_erros(1)
             #print(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup}'.")
             PPA_BACKUP.mensagem(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup}'.")
+            PPA_BACKUP.log(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup}'.")
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             #print(f"ERRO: {e}")
             PPA_BACKUP.mensagem(f"ERRO: {e}")
+            PPA_BACKUP.log(f"ERRO: {e}")
 
             
     def backup_banco(diretorio_backup):
         PPA_BACKUP.pular_linha()
         PPA_BACKUP.titulo("BACKUP BANCO")
+        PPA_BACKUP.log("BACKUP BANCO")
         #print("\nBACKUP BANCO\n")
         # CRIA PASTA BANCO PARA BACKUP
-        mensagem=("BANCO CRIANDO DIRETÓRIO PARA GUARDAR BANCO DE DADOS...")
-        PPA_BACKUP.mensagem(mensagem)
+        PPA_BACKUP.mensagem("BANCO CRIANDO DIRETÓRIO PARA GUARDAR BANCO DE DADOS...")
+        PPA_BACKUP.log("BANCO CRIANDO DIRETÓRIO PARA GUARDAR BANCO DE DADOS...")
 
         diretorio_backup_banco = (diretorio_backup+'/BANCO')
         banco_origem=('C:/FIT/Dados/BANCO.FDB')
@@ -203,24 +220,28 @@ class PPA_BACKUP:
             #print(f"O DIRETÓRIO '{diretorio_backup_banco}' CRIADO COM SUCESSO!")
             #mensagem=(f"O DIRETÓRIO '{diretorio_backup_banco}' CRIADO COM SUCESSO!")
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup_banco}' CRIADO COM SUCESSO!")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup_banco}' CRIADO COM SUCESSO!")
 
         except FileExistsError:
             #PPA_BACKUP.acumulador_erros(1)
             #print(f"O DIRETÓRIO '{diretorio_backup_banco}' JÁ EXISTE.")
             #mensagem=(f"O DIRETÓRIO '{diretorio_backup_banco}' JÁ EXISTE.")
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup_banco}' JÁ EXISTE.")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup_banco}' JÁ EXISTE.")
 
         except PermissionError:
             PPA_BACKUP.acumulador_erros(1)
             #print(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_banco}'.")
             #mensagem=(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_banco}'.")
             PPA_BACKUP.mensagem(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_banco}'.")
+            PPA_BACKUP.log(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_banco}'.")
 
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             #print(f"ERRO: {e}")
             #mensagem=(f"ERRO: {e}")
             PPA_BACKUP.mensagem(f"ERRO: {e}")
+            PPA_BACKUP.log(f"ERRO: {e}")
         
         #COPIA BANCO:
         try:
@@ -229,32 +250,42 @@ class PPA_BACKUP:
                 #print("BANCO DE DADOS FOI COPIADO COM SUCESSO!")
                 #mensagem=("BANCO DE DADOS FOI COPIADO COM SUCESSO!")
                 PPA_BACKUP.mensagem("BANCO DE DADOS FOI COPIADO COM SUCESSO!")
+                PPA_BACKUP.log("BANCO DE DADOS FOI COPIADO COM SUCESSO!")
             else: 
                 PPA_BACKUP.acumulador_erros(1)
                 #print("NÃO FOI POSSÍVEL COPIAR BANCO DE DADOS!")
                 #mensagem=("NÃO FOI POSSÍVEL COPIAR BANCO DE DADOS!")
                 PPA_BACKUP.mensagem("NÃO FOI POSSÍVEL COPIAR BANCO DE DADOS!")
+                PPA_BACKUP.log("NÃO FOI POSSÍVEL COPIAR BANCO DE DADOS!")
 
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             #print(f"NÃO FOI POSSÍVEL COPIAR O BANCO DE DADOS: {e}")
             #mensagem=(f"NÃO FOI POSSÍVEL COPIAR O BANCO DE DADOS: {e}")
             PPA_BACKUP.mensagem(f"NÃO FOI POSSÍVEL COPIAR O BANCO DE DADOS: {e}")
+            PPA_BACKUP.log(f"NÃO FOI POSSÍVEL COPIAR O BANCO DE DADOS: {e}")
 
     
     def backup_emp1_nfe(diretorio_backup, emp1_nfe):
-         #print("BACKUP_EMP1_NFE")
+
+        quantidade_arquivos_movidos=0
+        quantidade_arquivos_origem=0
+        quantidade_arquivos_destino=0
+
+        #print("BACKUP_EMP1_NFE")
         str_ano_mes=PPA_BACKUP.retorna_anomes()
         diretorio_backup=str(diretorio_backup)
         ano_mes=str(str_ano_mes+"/")
         ultimo_arquivo=PPA_BACKUP.retorna_ultimo_arquivo(emp1_nfe)
-        nome_empresa=PPA_BACKUP.retorna_nome_empresa(ultimo_arquivo,"NFe_EMP3")
-        cnpj_empresa=PPA_BACKUP.retorna_CNPJ_empresa(ultimo_arquivo)
+        nome_empresa=PPA_BACKUP.retorna_nome_empresa(ultimo_arquivo,"NFe_EMP1")
+        cnpj_empresa=PPA_BACKUP.retorna_CNPJ_empresa(ultimo_arquivo, "CNPJ NÃO ENCONTRADO!")
         diretorio_backup_nfe = (diretorio_backup+'/'+nome_empresa+'/'+ano_mes)
 
         PPA_BACKUP.pular_linha()
-        PPA_BACKUP.titulo("BACKUP NFE "+str(nome_empresa)+" - "+str(cnpj_empresa))
+        PPA_BACKUP.titulo("BACKUP NFE: "+str(nome_empresa)+" - "+str(cnpj_empresa))
+        PPA_BACKUP.log("BACKUP NFE: "+str(nome_empresa)+" - "+str(cnpj_empresa))
         PPA_BACKUP.mensagem("CRIANDO DIRETÓRIO PARA GUARDAR NOTAS FISCAIS DA EMPRESA - "+nome_empresa+' EM '+diretorio_backup_nfe)
+        PPA_BACKUP.log("CRIANDO DIRETÓRIO PARA GUARDAR NOTAS FISCAIS DA EMPRESA - "+nome_empresa+' EM '+diretorio_backup_nfe)
        
         str_ano_mes=PPA_BACKUP.retorna_anomes()
         #print(diretorio_backup)
@@ -277,80 +308,125 @@ class PPA_BACKUP:
             #print(f"O DIRETÓRIO '{diretorio_backup_nfe}' FOI CRIADO COM SUCESSO!")
             #mensagem=(f"O DIRETÓRIO '{diretorio_backup_nfe}' FOI CRIADO COM SUCESSO!")
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup_nfe}' FOI CRIADO COM SUCESSO!")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup_nfe}' FOI CRIADO COM SUCESSO!")
 
         except FileExistsError:
             #PPA_BACKUP.acumulador_erros(1)
             #print(f"O DIRETÓRIO '{diretorio_backup_nfe}' JÁ EXISTE.")
             #mensagem=(f"O DIRETÓRIO '{diretorio_backup_nfe}' JÁ EXISTE.")
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup_nfe}' JÁ EXISTE.")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup_nfe}' JÁ EXISTE.")
 
         except PermissionError:
             PPA_BACKUP.acumulador_erros(1)
             #print(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_nfe}'.")
             #mensagem=(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_nfe}'.")
             PPA_BACKUP.mensagem(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_nfe}'.")
+            PPA_BACKUP.log(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_nfe}'.")
 
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             #print(f"ERRO: {e}")
             #mensagem=(f"ERRO: {e}")
             PPA_BACKUP.mensagem(f"ERRO: {e}")
+            PPA_BACKUP.log(f"ERRO: {e}")
 
         #COPIA ARQUIVOS FISCAIS:
-        try:
         
+        try:
             connection = sqlite3.connect('dados.db')
             cursor = connection.cursor()
 
             codigo_backup=PPA_BACKUP.retorna_ultimo_backup()
             src_files = os.listdir(emp1_nfe)
+            dtn_files = os.listdir(diretorio_backup_nfe)
+
+            for file in src_files:
+                quantidade_arquivos_origem=quantidade_arquivos_origem+1
+
+            for file in dtn_files:
+                quantidade_arquivos_destino=quantidade_arquivos_destino+1
+
+            PPA_BACKUP.mensagem("QUANTIDADE DE ARQUIVOS NA ORIGEM..: "+str(quantidade_arquivos_origem))
+            PPA_BACKUP.log("QUANTIDADE DE ARQUIVOS NA ORIGEM..: "+str(quantidade_arquivos_origem))
+            PPA_BACKUP.mensagem("QUANTIDADE DE ARQUIVOS NO DESTINO.: "+str(quantidade_arquivos_destino))
+            PPA_BACKUP.log("QUANTIDADE DE ARQUIVOS NO DESTINO.: "+str(quantidade_arquivos_destino))
+        
             for file_name in src_files:
-                full_file_name = os.path.join(emp1_nfe, file_name)
-                #print(str(codigo_backup)+" - "+str(file_name))
-                if os.path.isfile(full_file_name):
-                    cursor.execute("INSERT INTO ARQUIVOS (BACKUP_CODIGO_ARQUIVOS, EMPRESA_ARQUIVOS, CNPJ_ARQUIVO, NOME_ARQUIVO) VALUES ('"+(codigo_backup)+"','"+nome_empresa+"','"+str(cnpj_empresa)+"','"+str(file_name)+"')")
-                    shutil.copy(full_file_name, diretorio_backup_nfe)
-                connection.commit()
-                    
+                try:
+                    if file_name not in dtn_files:
+                        #print("ARQUIVO NOVO: ",file_name)
+                        full_file_name = os.path.join(emp1_nfe, file_name)
+                        #print(str(codigo_backup)+" - "+str(file_name))
+                        if os.path.isfile(full_file_name):
+                            cnpj_nfe_empresa=PPA_BACKUP.retorna_CNPJ_empresa(full_file_name, "CNPJ NÃO ENCONTRADO!")
+                            chave_nfe_empresa=PPA_BACKUP.retorna_CHAVE_empresa(full_file_name, "CHAVE NÃO ENCONTRADA!")
+                            cursor.execute("INSERT INTO ARQUIVOS (BACKUP_CODIGO_ARQUIVOS, EMPRESA_ARQUIVOS, CNPJ_ARQUIVOS, CHAVE_NFE_ARQUIVOS, NOME_ARQUIVOS) VALUES ('"+(codigo_backup)+"','"+nome_empresa+"','"+str(cnpj_nfe_empresa)+"','"+str(chave_nfe_empresa)+"','"+str(file_name)+"')")
+                            shutil.copy(full_file_name, diretorio_backup_nfe)
+                            PPA_BACKUP.log("ARQUIVO MOVIDO COM SUCESSO: "+str(file_name))
+                            quantidade_arquivos_movidos=quantidade_arquivos_movidos+1
+                        connection.commit()
+                except Exception as e:
+                    PPA_BACKUP.mensagem("NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: "+str(file_name)+" ERRO: "+str(e))
+                    PPA_BACKUP.log("NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: "+str(file_name)+" ERRO: "+str(e))
+                
             #print("NOTA FISCAL REFERENTE AO MÊS: "+str_ano_mes+" FOI COPIADO COM SUCESSO!")
             #mensagem=("NOTAS FISCAIS REFERENTE AO MÊS: "+str_ano_mes+" FORAM COPIADAS COM SUCESSO!")
+            PPA_BACKUP.mensagem("QUANTIDADE ARQUIVOS MOVIDOS: "+str(quantidade_arquivos_movidos))
+            PPA_BACKUP.log("QUANTIDADE ARQUIVOS MOVIDOS: "+str(quantidade_arquivos_movidos))
             PPA_BACKUP.mensagem("NOTAS FISCAIS REFERENTE AO MÊS: "+str_ano_mes+" FORAM COPIADAS COM SUCESSO!")
+            PPA_BACKUP.log("NOTAS FISCAIS REFERENTE AO MÊS: "+str_ano_mes+" FORAM COPIADAS COM SUCESSO!")
 
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             #print(f"NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: {e}")
             #mensagem=(f"NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: {e}")
             PPA_BACKUP.mensagem(f"NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: {e}")
+            PPA_BACKUP.log(f"NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: {e}")
             
 
     def backup_emp2_nfe(diretorio_backup, emp2_nfe):
-        
+
+        quantidade_arquivos_movidos=0
+        quantidade_arquivos_origem=0
+        quantidade_arquivos_destino=0
+
+        #print("BACKUP_EMP1_NFE")
         str_ano_mes=PPA_BACKUP.retorna_anomes()
         diretorio_backup=str(diretorio_backup)
         ano_mes=str(str_ano_mes+"/")
         ultimo_arquivo=PPA_BACKUP.retorna_ultimo_arquivo(emp2_nfe)
         nome_empresa=PPA_BACKUP.retorna_nome_empresa(ultimo_arquivo,"NFe_EMP2")
-        cnpj_empresa=PPA_BACKUP.retorna_CNPJ_empresa(ultimo_arquivo)
+        cnpj_empresa=PPA_BACKUP.retorna_CNPJ_empresa(ultimo_arquivo, "CNPJ NÃO ENCONTRADO!")
         diretorio_backup_nfe = (diretorio_backup+'/'+nome_empresa+'/'+ano_mes)
 
         PPA_BACKUP.pular_linha()
-        PPA_BACKUP.titulo("BACKUP NFE "+str(nome_empresa)+" - "+str(cnpj_empresa))
+        PPA_BACKUP.titulo("BACKUP NFE: "+str(nome_empresa)+" - "+str(cnpj_empresa))
+        PPA_BACKUP.log("BACKUP NFE: "+str(nome_empresa)+" - "+str(cnpj_empresa))
         PPA_BACKUP.mensagem("CRIANDO DIRETÓRIO PARA GUARDAR NOTAS FISCAIS DA EMPRESA - "+nome_empresa+' EM '+diretorio_backup_nfe)
+        PPA_BACKUP.log("CRIANDO DIRETÓRIO PARA GUARDAR NOTAS FISCAIS DA EMPRESA - "+nome_empresa+' EM '+diretorio_backup_nfe)
+       
+        str_ano_mes=PPA_BACKUP.retorna_anomes()
         
+        # CRIA PASTA NFE PARA BACKUP:
         try:
             os.makedirs(diretorio_backup_nfe)
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup_nfe}' FOI CRIADO COM SUCESSO!")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup_nfe}' FOI CRIADO COM SUCESSO!")
 
         except FileExistsError:
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup_nfe}' JÁ EXISTE.")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup_nfe}' JÁ EXISTE.")
 
         except PermissionError:
             PPA_BACKUP.acumulador_erros(1)
             PPA_BACKUP.mensagem(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_nfe}'.")
+            PPA_BACKUP.log(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_nfe}'.")
 
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             PPA_BACKUP.mensagem(f"ERRO: {e}")
+            PPA_BACKUP.log(f"ERRO: {e}")
 
         #COPIA ARQUIVOS FISCAIS:
         try:
@@ -358,46 +434,85 @@ class PPA_BACKUP:
             cursor = connection.cursor()
             codigo_backup=PPA_BACKUP.retorna_ultimo_backup()
             src_files = os.listdir(emp2_nfe)
+            dtn_files = os.listdir(diretorio_backup_nfe)
+            for file in src_files:
+                quantidade_arquivos_origem=quantidade_arquivos_origem+1
+            for file in dtn_files:
+                quantidade_arquivos_destino=quantidade_arquivos_destino+1
+            PPA_BACKUP.mensagem("QUANTIDADE DE ARQUIVOS NA ORIGEM..: "+str(quantidade_arquivos_origem))
+            PPA_BACKUP.log("QUANTIDADE DE ARQUIVOS NA ORIGEM..: "+str(quantidade_arquivos_origem))
+            PPA_BACKUP.mensagem("QUANTIDADE DE ARQUIVOS NO DESTINO.: "+str(quantidade_arquivos_destino))
+            PPA_BACKUP.log("QUANTIDADE DE ARQUIVOS NO DESTINO.: "+str(quantidade_arquivos_destino))
+        
             for file_name in src_files:
-                full_file_name = os.path.join(emp2_nfe, file_name)
-                if os.path.isfile(full_file_name):
-                    cursor.execute("INSERT INTO ARQUIVOS (BACKUP_CODIGO_ARQUIVOS, EMPRESA_ARQUIVOS, CNPJ_ARQUIVO, NOME_ARQUIVO) VALUES ('"+(codigo_backup)+"','"+nome_empresa+"','"+str(cnpj_empresa)+"','"+str(file_name)+"')")
-                    shutil.copy(full_file_name, diretorio_backup_nfe)
-                connection.commit()
+                try:
+                    if file_name not in dtn_files:
+                        full_file_name = os.path.join(emp2_nfe, file_name)
+                        if os.path.isfile(full_file_name):
+                            cnpj_nfe_empresa=PPA_BACKUP.retorna_CNPJ_empresa(full_file_name, "CNPJ NÃO ENCONTRADO!")
+                            chave_nfe_empresa=PPA_BACKUP.retorna_CHAVE_empresa(full_file_name, "CHAVE NÃO ENCONTRADA!")
+                            cursor.execute("INSERT INTO ARQUIVOS (BACKUP_CODIGO_ARQUIVOS, EMPRESA_ARQUIVOS, CNPJ_ARQUIVOS, CHAVE_NFE_ARQUIVOS, NOME_ARQUIVOS) VALUES ('"+(codigo_backup)+"','"+nome_empresa+"','"+str(cnpj_nfe_empresa)+"','"+str(chave_nfe_empresa)+"','"+str(file_name)+"')")
+                            shutil.copy(full_file_name, diretorio_backup_nfe)
+                            PPA_BACKUP.log("ARQUIVO MOVIDO COM SUCESSO: "+str(file_name))
+                            quantidade_arquivos_movidos=quantidade_arquivos_movidos+1
+                        connection.commit()
+                except Exception as e:
+                    PPA_BACKUP.mensagem("NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: "+str(file_name)+" ERRO: "+str(e))
+                    PPA_BACKUP.log("NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: "+str(file_name)+" ERRO: "+str(e))
+    
+            PPA_BACKUP.mensagem("QUANTIDADE ARQUIVOS MOVIDOS: "+str(quantidade_arquivos_movidos))
+            PPA_BACKUP.log("QUANTIDADE ARQUIVOS MOVIDOS: "+str(quantidade_arquivos_movidos))
             PPA_BACKUP.mensagem("NOTAS FISCAIS REFERENTE AO MÊS: "+str_ano_mes+" FORAM COPIADAS COM SUCESSO!")
+            PPA_BACKUP.log("NOTAS FISCAIS REFERENTE AO MÊS: "+str_ano_mes+" FORAM COPIADAS COM SUCESSO!")
 
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             PPA_BACKUP.mensagem(f"NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: {e}")
+            PPA_BACKUP.log(f"NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: {e}")
     
 
     def backup_emp3_nfe(diretorio_backup, emp3_nfe):
+
+        quantidade_arquivos_movidos=0
+        quantidade_arquivos_origem=0
+        quantidade_arquivos_destino=0
+
+        #print("BACKUP_EMP1_NFE")
         str_ano_mes=PPA_BACKUP.retorna_anomes()
         diretorio_backup=str(diretorio_backup)
         ano_mes=str(str_ano_mes+"/")
         ultimo_arquivo=PPA_BACKUP.retorna_ultimo_arquivo(emp3_nfe)
         nome_empresa=PPA_BACKUP.retorna_nome_empresa(ultimo_arquivo,"NFe_EMP3")
-        cnpj_empresa=PPA_BACKUP.retorna_CNPJ_empresa(ultimo_arquivo)
+        cnpj_empresa=PPA_BACKUP.retorna_CNPJ_empresa(ultimo_arquivo, "CNPJ NÃO ENCONTRADO!")
         diretorio_backup_nfe = (diretorio_backup+'/'+nome_empresa+'/'+ano_mes)
 
         PPA_BACKUP.pular_linha()
-        PPA_BACKUP.titulo("BACKUP NFE "+str(nome_empresa)+" - "+str(cnpj_empresa))
+        PPA_BACKUP.titulo("BACKUP NFE: "+str(nome_empresa)+" - "+str(cnpj_empresa))
+        PPA_BACKUP.log("BACKUP NFE: "+str(nome_empresa)+" - "+str(cnpj_empresa))
         PPA_BACKUP.mensagem("CRIANDO DIRETÓRIO PARA GUARDAR NOTAS FISCAIS DA EMPRESA - "+nome_empresa+' EM '+diretorio_backup_nfe)
+        PPA_BACKUP.log("CRIANDO DIRETÓRIO PARA GUARDAR NOTAS FISCAIS DA EMPRESA - "+nome_empresa+' EM '+diretorio_backup_nfe)
+       
+        str_ano_mes=PPA_BACKUP.retorna_anomes()
         
+        # CRIA PASTA NFE PARA BACKUP:
         try:
             os.makedirs(diretorio_backup_nfe)
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup_nfe}' FOI CRIADO COM SUCESSO!")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup_nfe}' FOI CRIADO COM SUCESSO!")
 
         except FileExistsError:
             PPA_BACKUP.mensagem(f"O DIRETÓRIO '{diretorio_backup_nfe}' JÁ EXISTE.")
+            PPA_BACKUP.log(f"O DIRETÓRIO '{diretorio_backup_nfe}' JÁ EXISTE.")
 
         except PermissionError:
             PPA_BACKUP.acumulador_erros(1)
             PPA_BACKUP.mensagem(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_nfe}'.")
+            PPA_BACKUP.log(f"PERMISSÃO NEGADA: NÃO FOI POSSÍVEL CRIAR '{diretorio_backup_nfe}'.")
 
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             PPA_BACKUP.mensagem(f"ERRO: {e}")
+            PPA_BACKUP.log(f"ERRO: {e}")
 
         #COPIA ARQUIVOS FISCAIS:
         try:
@@ -405,17 +520,41 @@ class PPA_BACKUP:
             cursor = connection.cursor()
             codigo_backup=PPA_BACKUP.retorna_ultimo_backup()
             src_files = os.listdir(emp3_nfe)
+            dtn_files = os.listdir(diretorio_backup_nfe)
+            for file in src_files:
+                quantidade_arquivos_origem=quantidade_arquivos_origem+1
+            for file in dtn_files:
+                quantidade_arquivos_destino=quantidade_arquivos_destino+1
+            PPA_BACKUP.mensagem("QUANTIDADE DE ARQUIVOS NA ORIGEM..: "+str(quantidade_arquivos_origem))
+            PPA_BACKUP.log("QUANTIDADE DE ARQUIVOS NA ORIGEM..: "+str(quantidade_arquivos_origem))
+            PPA_BACKUP.mensagem("QUANTIDADE DE ARQUIVOS NO DESTINO.: "+str(quantidade_arquivos_destino))
+            PPA_BACKUP.log("QUANTIDADE DE ARQUIVOS NO DESTINO.: "+str(quantidade_arquivos_destino))
+        
             for file_name in src_files:
-                full_file_name = os.path.join(emp3_nfe, file_name)
-                if os.path.isfile(full_file_name):
-                    cursor.execute("INSERT INTO ARQUIVOS (BACKUP_CODIGO_ARQUIVOS, EMPRESA_ARQUIVOS, CNPJ_ARQUIVO, NOME_ARQUIVO) VALUES ('"+(codigo_backup)+"','"+nome_empresa+"','"+str(cnpj_empresa)+"','"+str(file_name)+"')")
-                    shutil.copy(full_file_name, diretorio_backup_nfe)
-                connection.commit()
+                try:
+                    if file_name not in dtn_files:
+                        full_file_name = os.path.join(emp3_nfe, file_name)
+                        if os.path.isfile(full_file_name):
+                            cnpj_nfe_empresa=PPA_BACKUP.retorna_CNPJ_empresa(full_file_name, "CNPJ NÃO ENCONTRADO!")
+                            chave_nfe_empresa=PPA_BACKUP.retorna_CHAVE_empresa(full_file_name, "CHAVE NÃO ENCONTRADA!")
+                            cursor.execute("INSERT INTO ARQUIVOS (BACKUP_CODIGO_ARQUIVOS, EMPRESA_ARQUIVOS, CNPJ_ARQUIVOS, CHAVE_NFE_ARQUIVOS, NOME_ARQUIVOS) VALUES ('"+(codigo_backup)+"','"+nome_empresa+"','"+str(cnpj_nfe_empresa)+"','"+str(chave_nfe_empresa)+"','"+str(file_name)+"')")
+                            shutil.copy(full_file_name, diretorio_backup_nfe)
+                            PPA_BACKUP.log("ARQUIVO MOVIDO COM SUCESSO: "+str(file_name))
+                            quantidade_arquivos_movidos=quantidade_arquivos_movidos+1
+                        connection.commit()
+                except Exception as e:
+                    PPA_BACKUP.mensagem("NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: "+str(file_name)+" ERRO: "+str(e))
+                    PPA_BACKUP.log("NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: "+str(file_name)+" ERRO: "+str(e))
+    
+            PPA_BACKUP.mensagem("QUANTIDADE ARQUIVOS MOVIDOS: "+str(quantidade_arquivos_movidos))
+            PPA_BACKUP.log("QUANTIDADE ARQUIVOS MOVIDOS: "+str(quantidade_arquivos_movidos))
             PPA_BACKUP.mensagem("NOTAS FISCAIS REFERENTE AO MÊS: "+str_ano_mes+" FORAM COPIADAS COM SUCESSO!")
+            PPA_BACKUP.log("NOTAS FISCAIS REFERENTE AO MÊS: "+str_ano_mes+" FORAM COPIADAS COM SUCESSO!")
 
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             PPA_BACKUP.mensagem(f"NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: {e}")
+            PPA_BACKUP.log(f"NÃO FOI POSSÍVEL COPIAR NOTA FISCAL: {e}")
 
         
     def retorna_data_atual():
@@ -471,6 +610,7 @@ class PPA_BACKUP:
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
             PPA_BACKUP.mensagem(f"NÃO FOI POSSÍVEL RETORNAR O NÚMERO DO ÚLTIMO BACKUP: {e}")
+            PPA_BACKUP.log(f"NÃO FOI POSSÍVEL RETORNAR O NÚMERO DO ÚLTIMO BACKUP: {e}")
         
     
     #def mensagem_em_texto(conteudo):
@@ -503,6 +643,12 @@ class PPA_BACKUP:
         global conteudo_enviado_email
         texto_mensagem=(hora_atual+" - "+conteudo)
         conteudo_enviado_email.append(texto_mensagem)
+
+    def log(conteudo):
+        hora_atual=PPA_BACKUP.retorna_hora_formatada()
+        global log
+        texto_log=(hora_atual+" - "+conteudo)
+        log.append(texto_log)
           
 
     def recupera_mensagem():
@@ -536,7 +682,7 @@ class PPA_BACKUP:
             return nome
     
             
-    def retorna_CNPJ_empresa(xml):
+    def retorna_CNPJ_empresa(xml, sem_cnpj):
         try:
             #print(xml)
             root = ET.parse(xml).getroot()
@@ -546,12 +692,35 @@ class PPA_BACKUP:
                 
                 return(cnpj_empresa.text)
             else:
-                return
+                PPA_BACKUP.acumulador_erros(1)
+                PPA_BACKUP.log("NÃO FOI POSSÍVEL VERIFICAR CNPJ DO XML: "+str(xml))
+                return sem_cnpj
+            
             
         except Exception as e:
             PPA_BACKUP.acumulador_erros(1)
-            PPA_BACKUP.mensagem(f"NÃO FOI POSSÍVEL VERIFICAR CNPJ DA EMPRESA PELO XML! {e}")
+            #PPA_BACKUP.mensagem(f"NÃO FOI POSSÍVEL VERIFICAR CNPJ DA EMPRESA PELO XML! {e}")
+            PPA_BACKUP.log("ERRO AO RETORNAR CNPJ DO XML: "+str(xml))
             return 
+        
+    def retorna_CHAVE_empresa(xml,sem_chave):
+        try:
+            root = ET.parse(xml).getroot()
+            nsNFE = {'ns':"http://www.portalfiscal.inf.br/nfe"}
+            chave_nfe_empresa = root.find('ns:protNFe/ns:infProt/ns:chNFe', nsNFE)
+            if (chave_nfe_empresa)!=None:
+                
+                return(chave_nfe_empresa.text)
+            else:
+                PPA_BACKUP.acumulador_erros(1)
+                PPA_BACKUP.log("NÃO FOI POSSÍVEL VERIFICAR CHAVE DO XML: "+str(xml))
+                return sem_chave
+            
+        except Exception as e:
+            PPA_BACKUP.acumulador_erros(1)
+            #PPA_BACKUP.mensagem(f"NÃO FOI POSSÍVEL VERIFICAR CHAVE DA EMPRESA PELO XML! {e}")
+            PPA_BACKUP.log("ERRO AO RETORNAR CHAVE DO XML: "+str(xml))
+            return
             
 
     def retorna_ultimo_arquivo(diretorio):
